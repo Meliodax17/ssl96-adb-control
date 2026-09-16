@@ -1,0 +1,33 @@
+{
+  // Cau hinh IntelliSense: giup IDE hieu duoc code, nhay toi dinh nghia ham,
+  // va khong bao loi gia o cac thanh ghi cua STM32.
+  // Cac duong dan va dinh nghia o day phai TRUNG voi tools/build.ps1.
+  "version": 4,
+  "configurations": [
+    {
+      "name": "STM32F103C8T6",
+
+      "includePath": [
+        "${workspaceFolder}/User",
+        "${workspaceFolder}/User/USB/inc",
+        "${workspaceFolder}/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x",
+        "${workspaceFolder}/Libraries/CMSIS/CM3/CoreSupport",
+        "${workspaceFolder}/Libraries/STM32F10x_StdPeriph_Driver/inc",
+        "${workspaceFolder}/Libraries/STM32_USB-FS-Device_Driver/inc",
+        "${workspaceFolder}/Libraries/DSP_Lib/Include"
+      ],
+
+      "defines": [
+        "USE_STDPERIPH_DRIVER",
+        "STM32F10X_MD"
+      ],
+
+      "compilerPath": "${workspaceFolder}/tools/arm-gnu/bin/arm-none-eabi-gcc.exe",
+      "compilerArgs": ["-mcpu=cortex-m3", "-mthumb"],
+
+      "cStandard": "c99",
+      "cppStandard": "c++11",
+      "intelliSenseMode": "gcc-arm"
+    }
+  ]
+}

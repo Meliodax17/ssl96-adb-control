@@ -1,0 +1,58 @@
+﻿BAO CAO CHAN DOAN CHUOI TPS9266x
+ Tach bach duong GHI va duong DOC cua tung IC
+=========================================================
+ Mat na IC tra loi lenh doc: 0x3D
+ Mat na IC ghi WIDTH that bai: 0x02
+ So lan tran bo dem nhan (ORE): 0
+ So lan phai thu lai giao dich : 147304
+---------------------------------------------------------
+ IC301  dia chi=0  DEVID=0x20
+  1. DOC  ICID   : OK         =0x96 TPS92664 (master)
+  2. GHI  WIDTH01: OK         (IC da tra ACK 0x7F)
+  3. DOC LAI     : OK         =0x55 KHOP
+  4. DOC  STATUS : OK        
+        STATUS=0x01  -> khong co bit loi nao | PWR=1: da duoc khoi tao
+---------------------------------------------------------
+ IC302  dia chi=1  DEVID=0x61
+  1. DOC  ICID   : IM LANG   
+  2. GHI  WIDTH01: KHONG ACK -
+ IC303  dia chi=2  DEVID=0xE2
+  1. DOC  ICID   : OK     C da tra ACK 0x7F)
+  3. DOC LAI     : OK         =0x55 KHOP
+  4. DOC  STATUS : OK        
+        STATUS=0x01  -> khong co bit loi nao | PWR=1: da duoc khoi tao
+---------------------------------------------------------
+ IC304  dia chi=3  DEVID=0xA3
+  1. DOC  ICID   : OK         =0x98 TPS92667 (slave)
+  2. GHI  WIDTH01: OK         (IC da tra ACK 0x7F)
+  3. DOC LAI     : OK         =0x55 KHOP
+  4. DOC  STATUS : OK        
+        STATUS=0x01  -> khong co bit loi nao | PWR=1: da duoc khoi tao
+---------------------------------------------------------
+ IC305  dia chi=4  DEVID=0x64
+  1. DOC  ICID   : OK         =0x98 TPS92667 (slave)
+  2. GHI  WIDTH01: OK         (IC da tra ACK 0x7F)
+  3. DOC LAI     : OK         =0x55 KHOP
+  4. DOC  STATUS : OK        
+        STATUS=0x01  -> khong co bit loi nao | PWR=1: da duoc khoi tao
+---------------------------------------------------------
+ IC306  dia chi=5  DEVID=0x25
+  1. DOC  ICID   : OK         =0x98 TPS92667 (slave)
+  2. GHI  WIDTH01: OK         (IC da tra ACK 0x7F)
+  3. DOC LAI     : OK         =0x55 KHOP
+  4. DOC  STATUS : OK        
+        STATUS=0x01  -> khong co bit loi nao | PWR=1: da duoc khoi tao
+---------------------------------------------------------
+ QUET CA 16 DIA CHI (tim IC bi dat sai chan ADDRx)
+   dia chi 0  DEVID=0x20  ICID=0x96  TPS92664 (master)
+   dia chi 2  DEVID=0xE2  ICID=0x98  TPS92667 (slave)
+   dia chi 3  DEVID=0xA3  ICID=0x98  TPS92667 (slave)
+   dia chi 4  DEVID=0x64  ICID=0x98  TPS92667 (slave)
+   dia chi 5  DEVID=0x25  ICID=0x98  TPS92667 (slave)
+   Tong so IC tim thay tren toan bus: 5 / 6 mong doi
+---------------------------------------------------------
+ DO NHIEU NEN CUA DUONG NHAN (khong phat gi trong 200 ms)
+   So byte nhan duoc khi im lang: 0
+   => Bus YEN TINH. Khong ai lai duong TX bat thuong.
+      Loi nam o cho khac, khong phai nghen bus.
+--------------------------------

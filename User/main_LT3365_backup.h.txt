@@ -1,0 +1,108 @@
+/**
+  ******************************************************************************
+  * @file    main.h
+  * $Author: wdluo $
+  * $Revision: 67 $
+  * $Date:: 2012-08-15 19:00:29 +0800 #$
+  * @brief   主函数包含的头文件.
+  ******************************************************************************
+  * @attention
+  *
+  *<h3><center>&copy; Copyright 2009-2012, ViewTool</center>
+  *<center><a href="http:\\www.viewtool.com">http://www.viewtool.com</a></center>
+  *<center>All Rights Reserved</center></h3>
+  * 
+  ******************************************************************************
+  */
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __MAIN_H
+#define __MAIN_H
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f10x_conf.h"
+
+/* Exported Functions --------------------------------------------------------*/
+void SendSPIData(u8 data1,u8 data2);
+void ClearRxBuf(void);
+extern uint8_t USART2_Rx_Buf[256],data[64],Gu8FrameHeader;
+extern uint16_t Gu8ReadCnt,USART2_RxCnt,USART1_RxCnt;
+extern uint8_t USART1_Rx_Buf[256],Gu8ExtFlag;
+extern uint8_t USART2_HaveMes,USART1_HaveMes;
+extern uint8_t Gu8data[64];
+uint16_t crc_16_ibm(uint8_t *buf, uint8_t len);
+extern uint32_t Gu8DMABufferLen;
+extern int16_t m;
+extern uint16_t j;
+uint8_t reverse_byte(uint8_t u8Data);
+void AllModeCycle(void);
+void effect1(uint16_t* u16PWM,uint8_t u8DevID);
+extern uint16_t Gu16PWM_0x20[12];
+extern uint16_t Gu16PWM_0x61[12];
+void Delay_us(uint16_t u16Data);
+void updata_0x20(void);
+void updata_0x61(void);
+void EffectNew(const uint16_t(*u16PWM)[48],uint8_t u8Index);
+void SingleEffect(const uint16_t(*u16PWM)[48],uint8_t u8Index,uint8_t u8DeviceID,uint8_t u8Posi);
+void SingleBreath( uint16_t u16PWM,uint8_t u8DeviceID);
+void LED_Turn(const uint16_t(*u16PWM)[10],uint8_t u8Index);
+void LED_Reverse(const uint16_t(*u16PWM)[2],uint8_t u8Index);
+void LED_Position1_1(const uint16_t(*u16PWM)[15],uint8_t u8Index);
+void LED_Position1_2(const uint16_t(*u16PWM)[16],uint8_t u8Index);
+void LED_Position2(const uint16_t(*u16PWM)[28],uint8_t u8Index);
+void LED_Far(uint16_t u16PWMValue);
+void CloseAll(void);
+void AllUpdate(void);
+void Device0_Curnt_Set(void);
+void Device1_Curnt_Set(void);
+void Device2_Curnt_Set(void);
+void Device12_Curnt_Set(void);
+void LT3365_ALLOFF(uint8_t u8DeviceID);
+void Device13_Curnt_Set(void);
+void Device14_Curnt_Set(void);
+void Device15_Curnt_Set(void);
+void EffectBreath(const uint16_t u16PWM);
+void Data_Updata(uint8_t u8DeviceID);
+void SendCmd(uint8_t u8DevID);
+void EffectOf3365(const uint16_t(*u16PWM)[12],uint8_t u8Index,uint8_t u8DevID);
+void EffectCycle3365(const uint16_t(*u16PWM)[48],uint8_t u8Index);
+void CycleOneBuffer(uint16_t *u16PWM);
+void CtrlOneDevPWM(uint16_t *u16PWM,uint8_t u8DevID);
+void CtrlOneDevPHASE(uint16_t *u16PWM,uint8_t u8DevID);
+void ConfigCmd(uint8_t u8DevID,uint8_t u8RegAddr,uint8_t u8RegData);
+extern uint8_t Gu8BreathFlag ,BreathMode,BreathGama,BreathRed,
+BreathGreen ,BreathBlue,Gu8TST1,Gu8T2T3,Gu8Base,Gu8Tim4State,Gu8Tim4State1,Gu8StopFlag,Gu8Tim4Flag,Gu8BreakFlag;
+extern uint16_t Gu8TS ,Gu8T1,Gu8T2 ,Gu8T3 ,Gu8Tim4Cnt;
+#define LIN_Port GPIOB  //Connect to 3183 LIN Pin
+#define LIN_Pin  GPIO_Pin_7
+extern uint32_t Gu32USBTxStatus;
+extern uint32_t Modetime ;
+//#define LIN_Port GPIOA  //Connect to 3183 LIN Pin
+//#define LIN_Pin  GPIO_Pin_9
+
+#define SPI_Port GPIOA  //Connect to 3183 LIN Pin
+#define SPI_CS  GPIO_Pin_4
+#define SPI_SCLK  GPIO_Pin_5
+#define SPI_MOSI  GPIO_Pin_7
+#define SPI_MISO  GPIO_Pin_6
+
+#define delay_time 200
+#define CMD_WRITE 1
+#define CMD_READ 0
+#define TimeOut 500
+#define EffectDelay 8
+
+#define Key_Left   	 0x01 
+#define Key_Up       0x02
+#define Key_Enter    0x04   
+#define Key_Combine  0x06   
+
+extern uint8_t  B_Key_Up;
+extern uint8_t  B_Key_Left;
+extern uint8_t  B_Key_Enter;
+extern uint8_t  B_Key_Combine;
+extern uint8_t  B_respond;
+extern uint8_t  Keyin,Keyvalue,Key_In_Timer;	
+uint8_t  Keyin_key(void);	 
+
+#endif/* __MAIN_H */
+
+/*********************************END OF FILE**********************************/

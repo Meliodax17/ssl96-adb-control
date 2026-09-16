@@ -1,0 +1,146 @@
+{
+  // Task build cho Antigravity IDE / VS Code.
+  // Ctrl+Shift+B chay task build mac dinh.
+  // Ctrl+Shift+P -> "Tasks: Run Task" de chon task khac.
+  "version": "2.0.0",
+
+  "options": {
+    "cwd": "${workspaceFolder}"
+  },
+
+  "presentation": {
+    "echo": true,
+    "reveal": "always",
+    "focus": false,
+    "panel": "shared",
+    "showReuseMessage": false,
+    "clear": true
+  },
+
+  "tasks": [
+    {
+      "label": "Build: bien dich ra file HEX",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/build.ps1"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"],
+      "detail": "Bien dich phan thay doi, xuat build/SSL96_ADB_TPS9266x.hex"
+    },
+
+    {
+      "label": "Build: bien dich lai tu dau",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/build.ps1",
+        "-Rebuild"
+      ],
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "detail": "Xoa ket qua cu roi bien dich lai toan bo"
+    },
+
+    {
+      "label": "Build: bien dich qua o dia ao",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/build.ps1",
+        "-Subst"
+      ],
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "detail": "Dung khi duong dan project vuot gioi han 260 ky tu cua Windows"
+    },
+
+    {
+      "label": "Build: xoa ket qua build",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/build.ps1",
+        "-Clean"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Xoa thu muc build"
+    },
+
+    {
+      "label": "Flash: nap chip bang ST-LINK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/flash.ps1"
+      ],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "detail": "Nap file HEX moi nhat vao STM32F103C8T6"
+    },
+
+    {
+      "label": "Chan doan: doc bao cao qua USB",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/read_diag_usb.ps1"
+      ],
+      "problemMatcher": [],
+      "detail": "Doc bao cao chan doan qua cong USB cua board, khong can day nao"
+    },
+
+    {
+      "label": "Build va nap chip",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Build: bien dich ra file HEX",
+        "Flash: nap chip bang ST-LINK"
+      ],
+      "problemMatcher": [],
+      "detail": "Bien dich xong thi nap luon"
+    },
+
+    {
+      "label": "Cai dat: tai Arm GNU Toolchain",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/get_toolchain.ps1"
+      ],
+      "problemMatcher": [],
+      "detail": "Tai trinh bien dich vao tools/arm-gnu, chi can chay mot lan"
+    },
+
+    {
+      "label": "Build bang Keil MDK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/build.ps1",
+        "-UseKeil"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Dung project Keil thay vi arm-none-eabi-gcc"
+    }
+  ]
+}

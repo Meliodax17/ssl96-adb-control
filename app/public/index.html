@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SSL96 ADB 96-Pixel LED — Diagnostic & Control Panel">
+    <title>SSL96 ADB Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="hdr">
+        <div class="hdr-left">
+            <div class="logo">
+                <img src="icon.png" alt="SSC Logo" height="30" style="object-fit: contain;">
+                <h1>SSL96 <span class="grad-text">ADB Control</span></h1>
+            </div>
+            <span class="sep">|</span>
+            <span class="sub">96-Pixel LED · TPS9266x</span>
+        </div>
+        <div class="hdr-right">
+            <div id="usb-badge" class="usb-badge off">
+                <span class="dot"></span>
+                <span id="usb-text">Disconnected</span>
+            </div>
+            <button id="btn-conn" class="btn btn-sm" onclick="toggleConn()">Connect</button>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <button class="nav-tab active" data-t="dash" onclick="tab('dash')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Dashboard
+        </button>
+        <button class="nav-tab" data-t="map" onclick="tab('map')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+            LED Map
+        </button>
+        <button class="nav-tab" data-t="term" onclick="tab('term')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            Terminal
+        </button>
+    </nav>
+
+    <main class="main">
+        <!-- ============ DASHBOARD ============ -->
+        <section id="p-dash" class="panel on">
+            <div class="row gap-12">
+                <button class="btn btn-cyan" onclick="cmdRerun()">⚡ Run Diagnostics</button>
+                <button class="btn" onclick="cmdRequest()">📋 Get Report</button>
+                <button class="btn btn-purple" onclick="cmdBroadcast()">📡 Broadcast 50%</button>
+                <button class="btn" onclick="cmdRestore()">↩ Restore Default</button>
+            </div>
+
+            <h2 class="sh">IC Status <span class="badge" id="online-n">—</span></h2>
+            <div class="ic-grid" id="ic-grid"></div>
+
+            <h2 class="sh">Test Individual IC</h2>
+            <div class="ctrl-row">
+                <label>IC:</label>
+                <select id="sel-ic" class="sel">
+                    <option value="0">IC301 (addr 0) — Master</option>
+                    <option value="1">IC302 (addr 1)</option>
+                    <option value="2">IC303 (addr 2)</option>
+                    <option value="3">IC304 (addr 3)</option>
+                    <option value="4">IC305 (addr 4)</option>
+                    <option value="5">IC306 (addr 5)</option>
+                </select>
+                <label>Level:</label>
+                <input type="range" id="rng-ic" min="0" max="1023" value="512" class="rng" oninput="$('v-ic').textContent=this.value">
+                <span id="v-ic" class="rv">512</span>
+                <button class="btn btn-cyan btn-sm" onclick="cmdOnlyIc()">Light Up</button>
+            </div>
+
+            <h2 class="sh">All Channels Level</h2>
+            <div class="ctrl-row">
+                <input type="range" id="rng-all" min="0" max="1023" value="0" class="rng rng-w" oninput="onAllSlider(this.value)">
+                <span id="v-all" class="rv">0</span>
+                <button class="btn btn-purple btn-sm" onclick="cmdAllLevel()">Apply</button>
+                <span id="warn-all" class="warn"></span>
+            </div>
+        </section>
+
+        <!-- ============ LED MAP ============ -->
+        <section id="p-map" class="panel">
+            <div class="row gap-12 mb-12">
+                <span class="filter-lbl">String:</span>
+                <button class="fbtn on" data-f="all" onclick="filt('all')">All</button>
+                <button class="fbtn" data-f="A" onclick="filt('A')">A</button>
+                <button class="fbtn" data-f="B" onclick="filt('B')">B</button>
+                <button class="fbtn" data-f="C" onclick="filt('C')">C</button>
+                <button class="fbtn" data-f="D" onclick="filt('D')">D</button>
+                <span class="filter-lbl ml-16">Group:</span>
+                <button class="gbtn on" data-g="led" onclick="grp('led')">LED Pos</button>
+                <button class="gbtn" data-g="ic" onclick="grp('ic')">By IC</button>
+            </div>
+
+            <div class="map-info">
+                <span>💡 Bản đồ hiển thị 96 pixel với giá trị WIDTH mặc định. Dimming từng LED riêng lẻ sẽ được hỗ trợ trong phiên bản firmware tương lai.</span>
+            </div>
+
+            <div id="led-grid" class="led-grid"></div>
+        </section>
+
+        <!-- ============ TERMINAL ============ -->
+        <section id="p-term" class="panel">
+            <div class="row gap-12 mb-12">
+                <button class="btn btn-sm" onclick="$('tout').innerHTML=''">Clear</button>
+                <button class="btn btn-sm btn-cyan" onclick="cmdRequest()">Refresh</button>
+            </div>
+            <div class="term" id="term-box">
+                <pre id="tout"><span class="tm">Chờ báo cáo chẩn đoán...</span></pre>
+            </div>
+        </section>
+    </main>
+
+    <div id="toasts" class="toasts"></div>
+    <div id="loader" class="loader" style="display:none"><div class="spin"></div><span>Đang xử lý...</span></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

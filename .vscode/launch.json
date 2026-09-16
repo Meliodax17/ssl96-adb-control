@@ -1,0 +1,41 @@
+{
+  // Cau hinh debug. Can cai extension "Cortex-Debug" (marus25.cortex-debug)
+  // va mot trong cac server: ST-LINK GDB server, OpenOCD, hoac J-Link.
+  //
+  // Neu chi can nap chip ma khong debug thi khong dung file nay: chay task
+  // "Flash: nap chip bang ST-LINK" la du.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug (OpenOCD + ST-LINK)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/SSL96_ADB_TPS9266x.elf",
+      "device": "STM32F103C8",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32f1x.cfg"
+      ],
+      "svdFile": "",
+      "runToEntryPoint": "main",
+      "preLaunchTask": "Build: bien dich ra file HEX",
+      "showDevDebugOutput": "none"
+    },
+
+    {
+      "name": "Attach (OpenOCD + ST-LINK)",
+      "type": "cortex-debug",
+      "request": "attach",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/SSL96_ADB_TPS9266x.elf",
+      "device": "STM32F103C8",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32f1x.cfg"
+      ]
+    }
+  ]
+}

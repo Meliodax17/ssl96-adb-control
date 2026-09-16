@@ -1,0 +1,49 @@
+{
+  // Terminal mac dinh la PowerShell, vi cac task deu goi powershell.
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+
+  "files.associations": {
+    "*.h": "c",
+    "*.c": "c",
+    "*.ld": "plaintext",
+    "*.s": "arm",
+    "*.uvprojx": "xml",
+    "*.uvoptx": "xml"
+  },
+
+  // Ma nguon cua project nay luu bang bang ma GBK (chu thich tieng Trung cua
+  // tac gia goc). Dat autoGuessEncoding de IDE khong hien thi thanh ky tu la.
+  "files.autoGuessEncoding": true,
+
+  // An bot thu muc ket qua build va thu vien khong sua toi, cho de tim file.
+  "files.exclude": {
+    "**/build": true,
+    "**/tools/arm-gnu": true,
+    "RVMDK/Output": true,
+    "RVMDK/Listing": true,
+    "RVMDK/DebugConfig": true,
+    "**/*.o": true,
+    "**/*.d": true,
+    "**/*.crf": true,
+    "**/*.lst": true,
+    "**/*.bak": true
+  },
+
+  "search.exclude": {
+    "**/build": true,
+    "**/tools/arm-gnu": true,
+    "Libraries/DSP_Lib": true,
+    "RVMDK/Output": true,
+    "RVMDK/Listing": true,
+    "**/main_LT3365_backup.*": true
+  },
+
+  "C_Cpp.default.configurationProvider": "",
+  "C_Cpp.errorSquiggles": "enabled",
+
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4,
+  "editor.rulers": [100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}
