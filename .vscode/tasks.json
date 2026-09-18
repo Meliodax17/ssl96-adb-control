@@ -92,6 +92,19 @@
     },
 
     {
+      "label": "Mo bang dieu khien (giao dien)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/gui.ps1"
+      ],
+      "problemMatcher": [],
+      "detail": "Cua so dieu khien co nut bam, khong can go lenh"
+    },
+
+    {
       "label": "Chan doan: doc bao cao qua USB",
       "type": "shell",
       "command": "powershell",

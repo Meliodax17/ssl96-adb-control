@@ -447,7 +447,9 @@ $hex = Join-Path $Build "$Target.hex"
 $bin = Join-Path $Build "$Target.bin"
 
 Write-Step 'Link'
-$r = Invoke-Native -Exe $gcc -Arguments ($objects + $ldflags + @('-o', $elf))
+# -lm: thu vien toan hoc, can cho logf() trong phep quy doi NTC -> do C.
+# Phai dat SAU danh sach object thi trinh lien ket moi tim thay ky hieu.
+$r = Invoke-Native -Exe $gcc -Arguments ($objects + $ldflags + @('-o', $elf, '-lm'))
 if ($r.ExitCode -ne 0) {
     Write-Host $r.Output -ForegroundColor Red
     Write-Err 'Link that bai.'

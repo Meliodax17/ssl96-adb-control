@@ -5,6 +5,23 @@ Firmware cho module SSL 96-pixel ADB, chạy trên board Lumissil USB-Tool EB-V0
 
 ---
 
+## Dùng hằng ngày: bấm đúp vào `tools\SSL96.cmd`
+
+Không cần gõ lệnh. Cửa sổ điều khiển mở ra với:
+
+- **Sáu đèn trạng thái** cho IC301 đến IC306, xanh là tốt, vàng là ghi được nhưng đọc lỗi,
+  đỏ là không liên lạc được
+- **Thanh trượt độ sáng**, kèm dòng cảnh báo tự tính số LED sáng đồng thời và điện áp cần
+  cho chuỗi ANODE#1, đổi sang đỏ ngay khi vượt ngân sách 40V
+- Nút **Bật tất cả**, **Tắt hết**, **Về bảng mặc định**, **Chẩn đoán lại**
+- Sáu nút bật riêng từng IC
+- Ô kết quả hiện nguyên văn báo cáo từ board
+
+Bản dòng lệnh `tools\read_diag_usb.ps1` vẫn giữ nguyên cho ai cần chạy tự động.
+Cả hai dùng chung lớp giao tiếp USB trong `tools\ssl96_hid.ps1`.
+
+---
+
 ## Trạng thái: build đã chạy được
 
 Biên dịch thành công lần đầu ngày 14/09/2026. Toàn bộ 35 file nguồn, build sạch mất 23,6 giây.

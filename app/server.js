@@ -11,6 +11,7 @@
  *   0xD4 RESTORE    - tra ve bang do sang mac dinh
  *   0xD5 ONLY_IC    - chi bat sang 1 IC (byte[1]=0..15, byte[2..3]=level)
  *   0xD6 ALL_LEVEL  - dat tat ca kenh ve cung 1 muc (byte[1..2]=WIDTH LE)
+ *   0xD8 IC_LEVEL   - dat 16 kenh cua 1 IC (byte[1]=IC, byte[2..3]=WIDTH LE)
  */
 
 const express = require('express');
@@ -37,38 +38,25 @@ const CMD = {
 
 /* ========================================================================= */
 /*  Pixel Map — exact copy of ADB_PIXEL_LABEL from adb_dimming.c            */
-/* ========================================================================= */
 const PIXEL_LABELS = [
     // IC301 (addr 0) — pixel 0..15
-    {s:'C',l:14},{s:'D',l:14},{s:'C',l:15},{s:'D',l:15},
-    {s:'C',l:16},{s:'D',l:16},{s:'C',l:17},{s:'D',l:17},
-    {s:'C',l:18},{s:'D',l:18},{s:'C',l:19},{s:'D',l:19},
-    {s:'C',l:20},{s:'D',l:20},{s:'C',l:21},{s:'D',l:21},
+    {s:'C',l:21},{s:'D',l:21},{s:'C',l:20},{s:'D',l:20},{s:'C',l:19},{s:'D',l:19},{s:'C',l:18},{s:'D',l:18},
+    {s:'C',l:17},{s:'D',l:17},{s:'C',l:16},{s:'D',l:16},{s:'C',l:15},{s:'D',l:15},{s:'C',l:14},{s:'D',l:14},
     // IC302 (addr 1) — pixel 16..31
-    {s:'A',l:22},{s:'B',l:22},{s:'C',l:22},{s:'D',l:22},
-    {s:'A',l:23},{s:'B',l:23},{s:'C',l:23},{s:'D',l:23},
-    {s:'A',l:24},{s:'B',l:24},{s:'C',l:24},{s:'A',l:25},
-    {s:'B',l:25},{s:'C',l:25},{s:'A',l:26},{s:'B',l:26},
+    {s:'A',l:22},{s:'B',l:22},{s:'A',l:23},{s:'B',l:23},{s:'A',l:24},{s:'B',l:24},{s:'A',l:25},{s:'B',l:25},
+    {s:'A',l:26},{s:'B',l:26},{s:'C',l:25},{s:'C',l:24},{s:'C',l:23},{s:'D',l:23},{s:'C',l:22},{s:'D',l:22},
     // IC303 (addr 2) — pixel 32..47
-    {s:'A',l:14},{s:'B',l:14},{s:'A',l:15},{s:'B',l:15},
-    {s:'A',l:16},{s:'B',l:16},{s:'A',l:17},{s:'B',l:17},
-    {s:'A',l:18},{s:'B',l:18},{s:'A',l:19},{s:'B',l:19},
-    {s:'A',l:20},{s:'B',l:20},{s:'A',l:21},{s:'B',l:21},
+    {s:'B',l:14},{s:'A',l:14},{s:'B',l:15},{s:'A',l:15},{s:'B',l:16},{s:'A',l:16},{s:'B',l:17},{s:'A',l:17},
+    {s:'B',l:18},{s:'A',l:18},{s:'B',l:19},{s:'A',l:19},{s:'B',l:20},{s:'A',l:20},{s:'B',l:21},{s:'A',l:21},
     // IC304 (addr 3) — pixel 48..63
-    {s:'A',l:6},{s:'B',l:6},{s:'A',l:7},{s:'B',l:7},
-    {s:'A',l:8},{s:'B',l:8},{s:'A',l:9},{s:'B',l:9},
-    {s:'A',l:10},{s:'B',l:10},{s:'A',l:11},{s:'B',l:11},
-    {s:'A',l:12},{s:'B',l:12},{s:'A',l:13},{s:'B',l:13},
+    {s:'B',l:6},{s:'A',l:6},{s:'B',l:7},{s:'A',l:7},{s:'B',l:8},{s:'A',l:8},{s:'B',l:9},{s:'A',l:9},
+    {s:'B',l:10},{s:'A',l:10},{s:'B',l:11},{s:'A',l:11},{s:'B',l:12},{s:'A',l:12},{s:'B',l:13},{s:'A',l:13},
     // IC305 (addr 4) — pixel 64..79
-    {s:'A',l:1},{s:'B',l:1},{s:'A',l:2},{s:'B',l:2},
-    {s:'C',l:2},{s:'A',l:3},{s:'B',l:3},{s:'C',l:3},
-    {s:'A',l:4},{s:'B',l:4},{s:'C',l:4},{s:'D',l:4},
-    {s:'A',l:5},{s:'B',l:5},{s:'C',l:5},{s:'D',l:5},
+    {s:'C',l:5},{s:'D',l:5},{s:'C',l:4},{s:'D',l:4},{s:'C',l:3},{s:'C',l:2},{s:'B',l:1},{s:'A',l:1},
+    {s:'B',l:2},{s:'A',l:2},{s:'B',l:3},{s:'A',l:3},{s:'B',l:4},{s:'A',l:4},{s:'B',l:5},{s:'A',l:5},
     // IC306 (addr 5) — pixel 80..95
-    {s:'C',l:6},{s:'D',l:6},{s:'C',l:7},{s:'D',l:7},
-    {s:'C',l:8},{s:'D',l:8},{s:'C',l:9},{s:'D',l:9},
-    {s:'C',l:10},{s:'D',l:10},{s:'C',l:11},{s:'D',l:11},
-    {s:'C',l:12},{s:'D',l:12},{s:'C',l:13},{s:'D',l:13}
+    {s:'C',l:13},{s:'D',l:13},{s:'C',l:12},{s:'D',l:12},{s:'C',l:11},{s:'D',l:11},{s:'C',l:10},{s:'D',l:10},
+    {s:'C',l:9},{s:'D',l:9},{s:'C',l:8},{s:'D',l:8},{s:'C',l:7},{s:'D',l:7},{s:'C',l:6},{s:'D',l:6}
 ];
 
 const WIDTH_DEFAULTS = [
@@ -182,6 +170,17 @@ app.get('/api/info', (_req, res) => {
     res.json({
         pixelCount: 96, devCount: 6, chPerDev: 16,
         widthMax: 1023, widthLimit: 205,
+
+        /*  Rang buoc dien ap, dung de giao dien tu tinh va canh bao.
+         *  Board nguon 32LT3365 boost ra 40V roi buck lai, nen dien ap chuoi
+         *  LED luon duoi 40V. Voi LED ~3V thi khoang 13 LED sang dong thoi.
+         *  ANODE#1 noi tiep 4 IC = 64 kenh; ANODE#2 va #3 moi duong 1 IC. */
+        supplyVolt: 40, ledVf: 3,
+        anodeGroups: [
+            { name: 'ANODE#1', ics: [0, 1, 4, 5] },
+            { name: 'ANODE#2', ics: [2] },
+            { name: 'ANODE#3', ics: [3] }
+        ],
         labels: PIXEL_LABELS,
         defaults: WIDTH_DEFAULTS,
         icNames: ['IC301','IC302','IC303','IC304','IC305','IC306'],
@@ -221,8 +220,44 @@ app.post('/api/diag/only-ic', async (req, res) => {
     try {
         const ic = parseInt(req.body.ic) || 0;
         const level = parseInt(req.body.level) || 512;
-        const p = [ic & 0xFF, 0, level & 0xFF, (level >> 8) & 0xFF];
+
+        /*  Firmware doc: target = report[1], level = report[2] | report[3]<<8
+         *  Ma buf[2+i] = payload[i] tro thanh report[1+i], nen payload phai la
+         *  [ic, level_lo, level_hi]. Ban truoc chen thua mot so 0 o giua, lam
+         *  level lech mot byte va luon ra 0, khien firmware roi ve mac dinh
+         *  50% bat ke thanh truot dat o dau. */
+        const p = [ic & 0xFF, level & 0xFF, (level >> 8) & 0xFF];
         const text = await sendAndWait(CMD.ONLY_IC, p);
+        res.json({ ok: true, text });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/diag/only-string', async (req, res) => {
+    try {
+        let ic = parseInt(req.body.ic);
+        let ch = parseInt(req.body.channel);
+        let lvl = parseInt(req.body.level);
+        if (isNaN(ic) || ic < 0 || ic > 5) ic = 0;
+        if (isNaN(ch) || ch < 0 || ch > 15) ch = 0;
+        if (isNaN(lvl) || lvl < 0 || lvl > 1023) lvl = 511;
+
+        const text = await sendAndWait(0xD7, [ic, ch, lvl & 0xFF, (lvl >> 8) & 0xFF], 5000);
+        res.json({ok: true, text});
+    } catch (e) {
+        res.status(500).json({ok: false, error: e.message});
+    }
+});
+
+app.post('/api/diag/ic-level', async (req, res) => {
+    try {
+        let ic  = parseInt(req.body.ic);
+        let lvl = parseInt(req.body.level);
+        if (isNaN(ic)  || ic  < 0 || ic  > 5)    ic  = 0;
+        if (isNaN(lvl) || lvl < 0 || lvl > 1023) lvl = 0;
+
+        /*  0xD8 IC_LEVEL: dat ca 16 kenh cua mot IC, khong dung toi cac IC
+         *  khac. Khac voi 0xD5 ONLY_IC la lenh loai tru (tat het con lai). */
+        const text = await sendAndWait(0xD8, [ic, lvl & 0xFF, (lvl >> 8) & 0xFF], 5000);
         res.json({ ok: true, text });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });

@@ -44,6 +44,14 @@
 #define DIAG_CMD_ONLY_IC    0xD5u   /* chi bat sang MOT IC; report[1]=0..5   */
 #define DIAG_CMD_ALL_LEVEL  0xD6u   /* dat MOI kenh ve cung mot muc sang;
                                        report[1..2] = WIDTH 0..1023        */
+#define DIAG_CMD_ONLY_STRING 0xD7u  /* cap nhat MOT KENH cua MOT IC;
+                                       report[1] = IC (0..5),
+                                       report[2] = Kenh (0..15),
+                                       report[3..4] = WIDTH 0..1023 (LE)   */
+#define DIAG_CMD_IC_LEVEL   0xD8u   /* dat CA 16 KENH cua MOT IC ve mot muc,
+                                       KHONG dung toi cac IC khac;
+                                       report[1] = IC (0..5),
+                                       report[2..3] = WIDTH 0..1023 (LE)   */
 
 #define DIAG_REPORT_SIZE    64u
 #define DIAG_CHUNK_HDR      4u

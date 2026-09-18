@@ -3,122 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SSL96 ADB 96-Pixel LED — Diagnostic & Control Panel">
-    <title>SSL96 ADB Control</title>
+    <meta name="description" content="SSL96 ADB 96-pixel LED module control panel">
+    <title>ADB Controller</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <video autoplay muted loop playsinline id="bg-video">
+        <source src="bg.mp4" type="video/mp4">
+    </video>
+
     <header class="hdr">
         <div class="hdr-left">
             <div class="logo">
-                <img src="icon.png" alt="SSC Logo" height="30" style="object-fit: contain;">
-                <h1>SSL96 <span class="grad-text">ADB Control</span></h1>
+                <img src="icon.png" alt="Logo" height="30" style="object-fit:contain;">
+                <h1><span class="grad-text">ADB</span> Controller</h1>
             </div>
             <span class="sep">|</span>
-            <span class="sub">96-Pixel LED · TPS9266x</span>
+
+            <!-- Chon model module. Hien chi 96 pixel chay duoc; 64 va 88
+                 de san cho sau nay, chon vao se bao chua ho tro. -->
+            <div class="model-sw" id="model-sw">
+                <label class="model-lbl" data-i18n="lblModel"></label>
+                <button class="model-btn" id="model-btn" onclick="openModelPicker()">
+                    <span class="m3d-chip" id="model-chip"></span>
+                    <span id="model-btn-name">96 pixel</span>
+                    <span class="caret" aria-hidden="true">&#9662;</span>
+                </button>
+                <span class="model-tag" id="model-tag"></span>
+            </div>
         </div>
         <div class="hdr-right">
+            <!-- Chon ngon ngu: menu tha xuong, ten viet bang chinh ngon ngu do -->
+            <div class="lang-sw" id="lang-sw">
+                <button class="lang-cur" id="lang-cur" onclick="toggleLangMenu(event)"
+                        aria-haspopup="listbox" aria-expanded="false" data-i18n-title="langTip">
+                    <svg class="globe" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                         stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/>
+                        <path d="M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/>
+                    </svg>
+                    <span id="lang-cur-name">Tiếng Việt</span>
+                    <span class="caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="lang-menu" id="lang-menu" role="listbox">
+                    <button class="lang-item" data-lang="vi" role="option" onclick="pickLang('vi')">
+                        <span class="lang-code">VN</span><span class="lang-name">Tiếng Việt</span><span class="tick">✓</span>
+                    </button>
+                    <button class="lang-item" data-lang="en" role="option" onclick="pickLang('en')">
+                        <span class="lang-code">EN</span><span class="lang-name">English</span><span class="tick">✓</span>
+                    </button>
+                    <button class="lang-item" data-lang="ko" role="option" onclick="pickLang('ko')">
+                        <span class="lang-code">KR</span><span class="lang-name">한국어</span><span class="tick">✓</span>
+                    </button>
+                </div>
+            </div>
             <div id="usb-badge" class="usb-badge off">
                 <span class="dot"></span>
-                <span id="usb-text">Disconnected</span>
+                <span id="usb-text"></span>
             </div>
-            <button id="btn-conn" class="btn btn-sm" onclick="toggleConn()">Connect</button>
+            <button id="btn-theme" class="btn btn-sm" onclick="toggleTheme()" data-i18n="btnTheme"></button>
+            <button id="btn-conn" class="btn btn-sm" onclick="toggleConn()"></button>
         </div>
     </header>
 
     <nav class="nav">
-        <button class="nav-tab active" data-t="dash" onclick="tab('dash')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            Dashboard
-        </button>
-        <button class="nav-tab" data-t="map" onclick="tab('map')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
-            LED Map
-        </button>
-        <button class="nav-tab" data-t="term" onclick="tab('term')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            Terminal
-        </button>
+        <button class="nav-tab active" data-t="dash" onclick="tab('dash')" data-i18n="tabDash"></button>
+        <button class="nav-tab" data-t="map"  onclick="tab('map')"  data-i18n="tabMap"></button>
+        <button class="nav-tab" data-t="term" onclick="tab('term')" data-i18n="tabTerm"></button>
+        <button class="nav-tab" data-t="help" onclick="tab('help')" data-i18n="tabHelp"></button>
     </nav>
 
     <main class="main">
-        <!-- ============ DASHBOARD ============ -->
-        <section id="p-dash" class="panel on">
+
+    <!-- ==================== OVERVIEW ==================== -->
+    <section id="p-dash" class="panel on">
+
+        <div id="verdict" class="verdict unknown">
+            <div class="verdict-icon" id="verdict-icon">?</div>
+            <div class="verdict-body">
+                <div class="verdict-title" id="verdict-title"></div>
+                <div class="verdict-sub" id="verdict-sub"></div>
+            </div>
+            <button class="btn btn-accent" onclick="cmdRerun()" data-i18n="btnCheck"></button>
+        </div>
+
+        <h2 class="sh"><span data-i18n="hIcStatus"></span>
+            <span class="hint" data-i18n="hIcHint"></span>
+        </h2>
+        <div class="ic-grid" id="ic-grid"></div>
+
+        <h2 class="sh"><span data-i18n="hTemp"></span>
+            <span class="hint" data-i18n="hTempHint"></span>
+        </h2>
+        <div class="card">
+            <div class="temp-main">
+                <!-- NTC (R306) dat canh chuoi LED - so quan trong nhat -->
+                <div class="temp-dial" id="ntc-dial">
+                    <span class="temp-num" id="ntc-num">&mdash;</span>
+                    <span class="temp-unit" id="ntc-unit">&deg;C</span>
+                </div>
+                <div class="temp-side">
+                    <div class="temp-label" data-i18n="ntcLabel"></div>
+                    <div class="hint" id="ntc-raw">&mdash;</div>
+                    <div class="hint" data-i18n="ntcWhere"></div>
+                </div>
+
+                <div class="temp-sep"></div>
+
+                <!-- Nhiet do trong long IC301 -->
+                <div class="temp-dial small" id="temp-dial">
+                    <span class="temp-num" id="temp-num">&mdash;</span>
+                    <span class="temp-unit">&deg;C</span>
+                </div>
+                <div class="temp-side">
+                    <div class="temp-label" id="temp-label"></div>
+                    <div class="hint" id="temp-raw">&mdash;</div>
+                </div>
+            </div>
+            <div class="hint temp-note" data-i18n="ntcHow"></div>
+            <div class="temp-warn-row" id="temp-warn-row"></div>
+        </div>
+
+        <h2 class="sh"><span data-i18n="hLight"></span>
+            <span class="hint" data-i18n="hLightHint"></span>
+        </h2>
+
+        <div class="card">
+            <div class="ctrl-row">
+                <label class="ctrl-lbl" data-i18n="lblBright"></label>
+                <input type="range" id="rng-all" min="0" max="1023" value="102"
+                       class="rng rng-w" oninput="onAllSlider(this.value)">
+                <span id="v-all-pct" class="rv big">10%</span>
+                <button class="btn btn-accent" onclick="cmdAllLevel()" data-i18n="btnAllOn"></button>
+                <button class="btn" onclick="cmdAllLevel(0)" data-i18n="btnAllOff"></button>
+                <button class="btn" onclick="cmdRestore()" data-i18n="btnRestore"></button>
+            </div>
+
+            <div class="budget" id="budget">
+                <div class="budget-hdr">
+                    <span data-i18n="budgetHdr"></span>
+                    <span id="budget-num" class="budget-num">—</span>
+                </div>
+                <div class="bar"><div class="bar-fill" id="budget-bar"></div><div class="bar-limit"></div></div>
+                <div class="budget-note" id="budget-note"></div>
+            </div>
+
+            <div class="preset-row">
+                <span class="ctrl-lbl" data-i18n="lblPreset"></span>
+                <button class="btn btn-sm" onclick="setLevel(51)">5%</button>
+                <button class="btn btn-sm" onclick="setLevel(102)">10%</button>
+                <button class="btn btn-sm" onclick="setLevel(153)">15%</button>
+                <button class="btn btn-sm" onclick="setLevel(205)">20%</button>
+                <button class="btn btn-sm" onclick="setLevel(511)">50%</button>
+                <button class="btn btn-sm" onclick="setLevel(1023)">100%</button>
+            </div>
+        </div>
+
+        <h2 class="sh"><span data-i18n="hOnly"></span>
+            <span class="hint" data-i18n="hOnlyHint"></span>
+        </h2>
+        <div class="card">
+            <div class="ic-btn-row" id="only-ic-row"></div>
+            <div class="ctrl-row" style="margin-top:12px">
+                <button class="btn" id="btn-cycle" onclick="cmdCycleStrings()"></button>
+                <span class="hint" data-i18n="cycleHint"></span>
+            </div>
+        </div>
+
+        <h2 class="sh"><span data-i18n="hPerIc"></span>
+            <span class="hint" data-i18n="hPerIcHint"></span>
+        </h2>
+        <div class="card">
+            <!-- Sau hang, moi hang mot IC, do app.js dung -->
+            <div class="perc-list" id="perc-list"></div>
+
+            <div class="budget" id="perc-budget">
+                <div class="budget-hdr">
+                    <span data-i18n="budgetHdr"></span>
+                    <span id="perc-budget-num" class="budget-num">&mdash;</span>
+                </div>
+                <div class="bar"><div class="bar-fill" id="perc-budget-bar"></div><div class="bar-limit"></div></div>
+                <div class="budget-note" id="perc-budget-note"></div>
+            </div>
+
+            <div class="ctrl-row" style="margin-top:12px">
+                <button class="btn btn-accent" onclick="cmdApplyPerIc()" data-i18n="btnApplyPerIc"></button>
+                <button class="btn" onclick="percSetAll(0)" data-i18n="btnAllOff"></button>
+                <button class="btn" onclick="percSetAll(102)" data-i18n="btnPercEven"></button>
+                <span class="hint" data-i18n="percHint"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== LED MAP ==================== -->
+    <section id="p-map" class="panel">
+        <div class="card" style="margin-bottom:12px">
+            <div class="hint" style="margin-bottom:10px" data-i18n="mapHint"></div>
             <div class="row gap-12">
-                <button class="btn btn-cyan" onclick="cmdRerun()">⚡ Run Diagnostics</button>
-                <button class="btn" onclick="cmdRequest()">📋 Get Report</button>
-                <button class="btn btn-purple" onclick="cmdBroadcast()">📡 Broadcast 50%</button>
-                <button class="btn" onclick="cmdRestore()">↩ Restore Default</button>
-            </div>
-
-            <h2 class="sh">IC Status <span class="badge" id="online-n">—</span></h2>
-            <div class="ic-grid" id="ic-grid"></div>
-
-            <h2 class="sh">Test Individual IC</h2>
-            <div class="ctrl-row">
-                <label>IC:</label>
-                <select id="sel-ic" class="sel">
-                    <option value="0">IC301 (addr 0) — Master</option>
-                    <option value="1">IC302 (addr 1)</option>
-                    <option value="2">IC303 (addr 2)</option>
-                    <option value="3">IC304 (addr 3)</option>
-                    <option value="4">IC305 (addr 4)</option>
-                    <option value="5">IC306 (addr 5)</option>
-                </select>
-                <label>Level:</label>
-                <input type="range" id="rng-ic" min="0" max="1023" value="512" class="rng" oninput="$('v-ic').textContent=this.value">
-                <span id="v-ic" class="rv">512</span>
-                <button class="btn btn-cyan btn-sm" onclick="cmdOnlyIc()">Light Up</button>
-            </div>
-
-            <h2 class="sh">All Channels Level</h2>
-            <div class="ctrl-row">
-                <input type="range" id="rng-all" min="0" max="1023" value="0" class="rng rng-w" oninput="onAllSlider(this.value)">
-                <span id="v-all" class="rv">0</span>
-                <button class="btn btn-purple btn-sm" onclick="cmdAllLevel()">Apply</button>
-                <span id="warn-all" class="warn"></span>
-            </div>
-        </section>
-
-        <!-- ============ LED MAP ============ -->
-        <section id="p-map" class="panel">
-            <div class="row gap-12 mb-12">
-                <span class="filter-lbl">String:</span>
-                <button class="fbtn on" data-f="all" onclick="filt('all')">All</button>
+                <span class="ctrl-lbl" data-i18n="lblFilter"></span>
+                <button class="fbtn on" data-f="all" onclick="filt('all')" data-i18n="fAll"></button>
                 <button class="fbtn" data-f="A" onclick="filt('A')">A</button>
                 <button class="fbtn" data-f="B" onclick="filt('B')">B</button>
                 <button class="fbtn" data-f="C" onclick="filt('C')">C</button>
                 <button class="fbtn" data-f="D" onclick="filt('D')">D</button>
-                <span class="filter-lbl ml-16">Group:</span>
-                <button class="gbtn on" data-g="led" onclick="grp('led')">LED Pos</button>
-                <button class="gbtn" data-g="ic" onclick="grp('ic')">By IC</button>
+                <div style="flex:1"></div>
+                <button class="btn btn-sm" onclick="mapSelectAll()" data-i18n="btnSelAll"></button>
+                <button class="btn btn-sm" onclick="cmdClearMapSel()" data-i18n="btnClearSel"></button>
             </div>
+        </div>
 
-            <div class="map-info">
-                <span>💡 Bản đồ hiển thị 96 pixel với giá trị WIDTH mặc định. Dimming từng LED riêng lẻ sẽ được hỗ trợ trong phiên bản firmware tương lai.</span>
+        <div class="card" style="margin-bottom:12px">
+            <div class="ctrl-row">
+                <label class="ctrl-lbl" data-i18n="lblBright"></label>
+                <input type="range" id="rng-map" min="0" max="1023" value="102" class="rng"
+                       style="width:200px" oninput="$('v-map').textContent=pct(this.value)">
+                <span id="v-map" class="rv">10%</span>
+                <span id="map-count" class="hint"></span>
+                <div style="flex:1"></div>
+                <button class="btn btn-accent" onclick="cmdApplyMap()" data-i18n="btnApplyMap"></button>
             </div>
+        </div>
 
-            <div id="led-grid" class="led-grid"></div>
-        </section>
+        <div id="led-grid" class="led-grid"></div>
+    </section>
 
-        <!-- ============ TERMINAL ============ -->
-        <section id="p-term" class="panel">
-            <div class="row gap-12 mb-12">
-                <button class="btn btn-sm" onclick="$('tout').innerHTML=''">Clear</button>
-                <button class="btn btn-sm btn-cyan" onclick="cmdRequest()">Refresh</button>
+    <!-- ==================== LOG ==================== -->
+    <section id="p-term" class="panel">
+        <div class="card" style="margin-bottom:12px">
+            <div class="row gap-12">
+                <span class="hint" data-i18n="termHint"></span>
+                <div style="flex:1"></div>
+                <label class="chk">
+                    <input type="checkbox" id="chk-auto" onchange="toggleAutoRefresh(this.checked)">
+                    <span data-i18n="lblAuto"></span>
+                </label>
+                <button class="btn btn-sm" onclick="cmdRequest()" data-i18n="btnReread"></button>
+                <button class="btn btn-sm" onclick="$('tout').innerHTML=''" data-i18n="btnClear"></button>
             </div>
-            <div class="term" id="term-box">
-                <pre id="tout"><span class="tm">Chờ báo cáo chẩn đoán...</span></pre>
-            </div>
-        </section>
+        </div>
+        <div class="term" id="term-box">
+            <pre id="tout"><span class="tm" data-i18n="termEmpty"></span></pre>
+        </div>
+    </section>
+
+    <!-- ==================== GUIDE ==================== -->
+    <section id="p-help" class="panel">
+        <div class="card help" data-i18n-html="helpHtml"></div>
+    </section>
+
     </main>
 
-    <div id="toasts" class="toasts"></div>
-    <div id="loader" class="loader" style="display:none"><div class="spin"></div><span>Đang xử lý...</span></div>
+    <!-- Hop thoai chon model, co hinh 3D cua tung tam den -->
+    <div class="modal" id="model-modal" onclick="if(event.target===this)closeModelPicker()">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-hdr">
+                <h2 data-i18n="modelPickTitle"></h2>
+                <button class="modal-x" onclick="closeModelPicker()" aria-label="close">&times;</button>
+            </div>
+            <p class="hint" data-i18n="modelPickHint"></p>
+            <div class="model-cards" id="model-cards"></div>
+        </div>
+    </div>
 
+    <div id="toasts" class="toasts"></div>
+    <div id="loader" class="loader" style="display:none"><div class="spin"></div><span>…</span></div>
+
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -9,6 +9,79 @@
 #include "usb_desc.h"
 #include "usb_pwr.h"
 #include "usbio.h"
+#include <math.h>
+
+/* ------------------------------------------------------------------------- */
+/*  Cam bien nhiet NTC tren module                                           */
+/*                                                                           */
+/*  Mach (schematic SSL_96pixel_ADB MD_07012026_R00, trang 1 va 2):          */
+/*                                                                           */
+/*      VDK1 --[R303 6K81]--+--[R306 = NTC 10K]-- GND   -> ADC1 (chan 9)     */
+/*                          |                              diem do TP376     */
+/*                       [C400 10nF]                                         */
+/*                                                                           */
+/*      VDK1 --[R313 6K81]--+--[R314 6K81]------- GND   -> ADC2              */
+/*                          |                                                */
+/*                       [C319 10nF]                                         */
+/*                                                                           */
+/*  R306 la NTC, dat ngay canh chuoi LED nen no do nhiet VUNG DEN.           */
+/*                                                                           */
+/*  Diem mau chot: R313 = R314 nen ADC2 LUON bang dung mot nua VDK1. Lay ty  */
+/*  so ADC1/ADC2 thi VDK1, dien ap tham chieu cua ADC va ca sai so khuech    */
+/*  dai deu triet tieu. Khong can biet VDK1 bang bao nhieu.                  */
+/*                                                                           */
+/*      x     = adc1 / (2 * adc2)   = R_ntc / (R303 + R_ntc)                 */
+/*      R_ntc = R303 * adc1 / (2 * adc2 - adc1)                              */
+/*                                                                           */
+/*  Quy doi ra nhiet do theo phuong trinh he so B:                           */
+/*                                                                           */
+/*      1/T = 1/T25 + ln(R_ntc / R25) / B                                    */
+/*                                                                           */
+/*  So lieu NTC lay tu trang san pham TDK cho dung ma B57332V5103F360:       */
+/*      R25 = 10 kOhm +-1%,  B25/50 = 3380 K,  B25/85 = 3435 K,              */
+/*      B25/100 = 3455 K,  dai lam viec -40..150 do C, AEC-Q200.             */
+/*  Chon B25/100 vi vung nhiet dang quan tam cua tam den nam quanh 25..120.  */
+/* ------------------------------------------------------------------------- */
+#define NTC_R25      10000.0f   /* dien tro NTC o 25 do C, Ohm              */
+#define NTC_BETA      3455.0f   /* he so B25/100, K                          */
+#define NTC_R_TOP     6810.0f   /* R303, Ohm                                 */
+#define NTC_T25        298.15f  /* 25 do C tinh ra Kelvin                    */
+
+/*  Tra ve nhiet do theo don vi 0,1 do C. Tra ve NTC_TEMP_INVALID neu so doc
+ *  khong hop le (NTC dut, chap, hoac ADC chua lay mau).                     */
+#define NTC_TEMP_INVALID  (-32768)
+
+static int16_t NtcTempDeci(uint8_t adc1, uint8_t adc2)
+{
+    float denom, rNtc, invT, tC;
+
+    if (adc2 == 0u) { return NTC_TEMP_INVALID; }
+
+    /*  Mau so 2*adc2 - adc1 tien toi 0 khi NTC hoa ra ho mach (dien tro vo
+     *  cung lon). Chan lai de khong chia cho 0.                            */
+    denom = 2.0f * (float)adc2 - (float)adc1;
+    if (denom < 1.0f || adc1 == 0u) { return NTC_TEMP_INVALID; }
+
+    rNtc = NTC_R_TOP * (float)adc1 / denom;
+    if (rNtc < 1.0f) { return NTC_TEMP_INVALID; }
+
+    invT = 1.0f / NTC_T25 + logf(rNtc / NTC_R25) / NTC_BETA;
+    if (invT <= 0.0f) { return NTC_TEMP_INVALID; }
+
+    tC = 1.0f / invT - 273.15f;
+    if (tC < -60.0f || tC > 200.0f) { return NTC_TEMP_INVALID; }
+
+    return (int16_t)(tC * 10.0f + (tC >= 0.0f ? 0.5f : -0.5f));
+}
+
+/*  In mot so co mot chu so thap phan, vi du 42.7 */
+static void DiagDeci(int16_t deci)
+{
+    if (deci < 0) { Diag_Puts("-"); deci = (int16_t)(-deci); }
+    Diag_Dec((uint32_t)(deci / 10));
+    Diag_Puts(".");
+    Diag_Dec((uint32_t)(deci % 10));
+}
 
 /* ------------------------------------------------------------------------- */
 /*  Bo dem chua ban bao cao                                                  */
@@ -434,6 +507,99 @@ uint8_t Diag_HandleUsbCommand(const uint8_t *report)
         return 1u;
     }
 
+    if (report[0] == DIAG_CMD_ONLY_STRING)
+    {
+        uint8_t  target = report[1];
+        uint8_t  ch     = report[2];
+        uint8_t  err;
+        uint16_t level;
+
+        level = (uint16_t)(report[3] | ((uint16_t)report[4] << 8));
+        if (level > TPS_WIDTH_MAX) { level = TPS_WIDTH_MAX; }
+
+        s_len = 0; s_text[0] = '\0';
+
+        if (target >= TPS_DEV_COUNT)
+        {
+            Diag_Puts(" Dia chi IC khong hop le."); Diag_Nl();
+            (void)Diag_SendOverUsb(); return 1u;
+        }
+        if (ch >= TPS_CH_PER_DEV)
+        {
+            Diag_Puts(" Dia chi kenh khong hop le."); Diag_Nl();
+            (void)Diag_SendOverUsb(); return 1u;
+        }
+
+        /* Cap nhat duy nhat pixel muc tieu, giu nguyen cac pixel khac */
+        TPS_SetWidth(target, ch, level);
+
+        /* Xa du lieu xuong chip muc tieu */
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        err = TPS_FlushWidth(target);
+
+        Diag_Puts(" Update pixel IC30"); Diag_Dec((uint32_t)(target + 1));
+        Diag_Puts(" CH"); Diag_Dec((uint32_t)(ch + 1));
+        Diag_Puts(" = "); Diag_Dec((uint32_t)level);
+        Diag_Puts(err == TPS_OK ? " OK" : " FAIL");
+        Diag_Nl();
+
+        (void)Diag_SendOverUsb();
+    }
+
+    if (report[0] == DIAG_CMD_IC_LEVEL)
+    {
+        /*  Dat ca 16 kenh cua MOT IC ve mot muc sang, GIU NGUYEN cac IC khac.
+         *
+         *  Khac voi ONLY_IC (0xD5) la lenh loai tru - no tat het nhung con
+         *  con lai. Lenh nay chi ghi len dung con duoc chi dinh, nho vay may
+         *  tinh dat duoc moi IC mot muc sang rieng va ca sau con cung sang
+         *  theo muc cua minh.                                              */
+        uint8_t  target = report[1];
+        uint8_t  ch, err;
+        uint16_t level  = (uint16_t)(report[2] | ((uint16_t)report[3] << 8));
+
+        s_len = 0; s_text[0] = '\0';
+
+        if (target >= TPS_DEV_COUNT)
+        {
+            Diag_Puts(" Dia chi IC khong hop le, phai tu 0 den 5."); Diag_Nl();
+            (void)Diag_SendOverUsb();
+            return 1u;
+        }
+        if (level > TPS_WIDTH_MAX) { level = TPS_WIDTH_MAX; }
+
+        for (ch = 0; ch < TPS_CH_PER_DEV; ch++) { TPS_SetWidth(target, ch, level); }
+
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        err = TPS_FlushWidth(target);
+
+        Diag_Puts(" IC30"); Diag_Dec((uint32_t)(target + 1));
+        Diag_Puts(" dat 16 kenh = "); Diag_Dec((uint32_t)level);
+        Diag_Puts(err == TPS_OK ? "  OK" : "  THAT BAI");
+        Diag_Nl();
+
+        (void)Diag_SendOverUsb();
+        return 1u;
+    }
+
+    if (report[0] == DIAG_CMD_ALL_LEVEL)
+    {
+        uint16_t w = (uint16_t)(report[1] | ((uint16_t)report[2] << 8));
+        s_len = 0; s_text[0] = '\0';
+        if (w > TPS_WIDTH_MAX) { w = TPS_WIDTH_MAX; }
+        
+        TPS_SetWidthAll(w);
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        (void)TPS_FlushAll();
+        
+        Diag_Puts(" Set all channels to "); Diag_Dec((uint32_t)w); Diag_Nl();
+        (void)Diag_SendOverUsb();
+        return 1u;
+    }
+
     if (report[0] == DIAG_CMD_RESTORE)
     {
         s_len = 0; s_text[0] = '\0';
@@ -740,6 +906,128 @@ void Diag_RunFullReport(void)
         }
 
         Diag_Puts("  Con nao khong hien o tren la con khong tra loi duoc.");
+        Diag_Nl();
+    }
+
+    Diag_Puts("---------------------------------------------------------");
+    Diag_Nl();
+    Diag_Puts(" NHIET DO");
+    Diag_Nl();
+
+    /*  Theo schematic SSL_96pixel_ADB MD_07012026_R00:
+     *
+     *      VDK1 --[R303]--+--[R306 = NTC]-- GND      -> IC301 chan 9  (ADC1)
+     *                     |
+     *                  [C400 loc]                       diem do: TP376
+     *
+     *      VDK1 --[R313]--+--[R314]-------- GND      -> IC301        (ADC2)
+     *                     |
+     *                  [C314 loc]
+     *
+     *  R306 la NTC va duoc dat ngay canh chuoi LED, nen day moi la nhiet do
+     *  dang quan tam - nhiet vung den, khong phai nhiet trong long IC.
+     *
+     *  Hai chan ADC chi lay mau khi bit LEDADCEN trong SYSCFG duoc bat. Ham
+     *  khoi tao binh thuong khong bat no vi viec dieu khien den khong can,
+     *  nen o day bat tam roi tra lai nguyen trang, khong de lai anh huong
+     *  gi len cau hinh dang chay.
+     *
+     *  Chi TPS92664 (IC301) co ADC. Cac con TPS92667 khong co.             */
+    {
+        uint8_t raw, sysOld = 0, sysSaved = 0;
+
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, &sysOld) == TPS_OK)
+        {
+            sysSaved = 1;
+            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG,
+                          (uint8_t)(sysOld | TPS_SYSCFG_LEDADCEN));
+            TPS_DelayMs(5);          /* cho bo ADC lay xong mot vong mau */
+        }
+        else
+        {
+            Diag_Puts("  Khong doc duoc SYSCFG, ADC co the chua duoc bat.");
+            Diag_Nl();
+        }
+
+        /*  Doc ca hai chan ADC roi quy doi. Phai doc ca hai vi phep tinh
+         *  dua tren TY SO giua chung.                                      */
+        {
+            uint8_t a1 = 0, a2 = 0, ok1, ok2;
+
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            ok1 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC1, &a1) == TPS_OK);
+
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            ok2 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC2, &a2) == TPS_OK);
+
+            Diag_Puts("  NTC R306 (canh chuoi LED): ");
+            if (ok1 && ok2)
+            {
+                int16_t deci = NtcTempDeci(a1, a2);
+                if (deci != NTC_TEMP_INVALID)
+                {
+                    float denom = 2.0f * (float)a2 - (float)a1;
+                    uint32_t rNtc = (uint32_t)(NTC_R_TOP * (float)a1 / denom);
+                    DiagDeci(deci); Diag_Puts(" do C   (R_ntc = ");
+                    Diag_Dec(rNtc); Diag_Puts(" Ohm)");
+                }
+                else { Diag_Puts("so doc khong hop le - kiem tra NTC va cau phan ap"); }
+            }
+            else { Diag_Puts("khong doc duoc ADC"); }
+            Diag_Nl();
+
+            Diag_Puts("    ADC1=0x"); Diag_Hex8(a1);
+            Diag_Puts("  ADC2=0x");   Diag_Hex8(a2);
+            Diag_Puts("  (ADC2 la moc VDK1/2, dung de khu VDK1 khoi phep tinh)");
+            Diag_Nl();
+        }
+
+        if (sysSaved)
+        {
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, sysOld);
+        }
+
+        /*  Nhiet do trong long IC301. Khac han NTC: day la nhiet cua ban
+         *  than con chip, dung de biet chip co qua nong khong.             */
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        Diag_Puts("  IC301 nhiet do trong IC (DIETEMP): ");
+        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_DIETEMP, &raw) == TPS_OK)
+        {
+            /*  T[degC] = 0.9098 * raw - 50  (SLUSE18 bang 7-54) */
+            int32_t tC = ((int32_t)raw * 9098) / 10000 - 50;
+            Diag_Puts("raw=0x"); Diag_Hex8(raw); Diag_Puts("  = ");
+            if (tC < 0) { Diag_Puts("-"); tC = -tC; }
+            Diag_Dec((uint32_t)tC); Diag_Puts(" do C");
+        }
+        else { Diag_Puts("khong doc duoc"); }
+        Diag_Nl();
+    }
+
+    /*  Bit canh bao qua nhiet co tren ca 6 con, la canh bao nhiet duy nhat
+     *  ma cac con slave TPS92667 cung cap.                                  */
+    Diag_Puts("  Bit canh bao qua nhiet (STATUS bit 2) tung con:");
+    Diag_Nl();
+    for (d = 0; d < TPS_DEV_COUNT; d++)
+    {
+        uint8_t stT;
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        if (TPS_ReadReg8(d, TPS_REG_STATUS, &stT) != TPS_OK)
+        {
+            Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
+            Diag_Puts(" khong tra loi");
+            Diag_Nl();
+            continue;
+        }
+        Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
+        Diag_Puts((stT & 0x04) ? " QUA NHIET" : " binh thuong");
         Diag_Nl();
     }
 
