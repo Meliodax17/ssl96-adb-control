@@ -227,10 +227,22 @@ function renderTemp(txt) {
     if (!seg) {
         num.textContent   = '—';
         dial.className    = 'temp-dial';
-        $('temp-label').textContent = t('tempNoData');
         $('temp-raw').textContent   = '—';
         $('temp-warn-row').innerHTML = '';
         renderNtc(null);
+
+        /*  Phan biet hai truong hop vi cach xu ly khac han nhau:
+         *    - chua co ban bao cao nao      -> bao nguoi dung bam Kiem tra
+         *    - co bao cao nhung thieu muc nhiet -> firmware trong chip cu,
+         *      phai nap lai HEX. Truoc day ca hai cung hien gach ngang nen
+         *      khong ai biet phai lam gi.                                 */
+        if (txt && txt.includes('BAO CAO CHAN DOAN CHUOI')) {
+            $('temp-label').textContent = t('tempOldFw');
+            $('ntc-raw').textContent    = t('tempOldFwHow');
+            $('ntc-dial').className     = 'temp-dial warn';
+        } else {
+            $('temp-label').textContent = t('tempNoData');
+        }
         return;
     }
     const body = seg[1];

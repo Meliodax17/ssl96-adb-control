@@ -332,55 +332,61 @@ body { font-family: 'Inter', sans-serif; background: transparent; color: var(--t
 
 
 /* ============================================================
-   Nen video + do trong suot cua cac lop giao dien
+   Nen trang chinh
 
-   Yeu cau: nhin ro video nen hon. Cach lam la tang do sang cua
-   video va giam do dac cua cac mang mau dat len tren no, roi
-   bu lai kha nang doc chu bang backdrop-filter (lam mo phan
-   video NGAY SAU mang) va mot lop do bong chu nhe. Nho vay
-   video van hien ro o vung trong, ma chu van sac net.
+   Truoc day day la mot doan video chay nen, va moi mang giao dien
+   phai lam mong di de nhin thay no. Gio doan video chuyen han sang
+   cua so gioi thieu luc khoi dong, nen trang chinh dung nen DAC
+   theo theme - chu sac net, khong can backdrop-filter, va may yeu
+   cung khong phai giai ma video suot phien lam viec.
+
+   Thay vao do la logo cong ty lam mo o giua trang.
    ============================================================ */
-#bg-video {
-    position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: -100; object-fit: cover; pointer-events: none;
-    opacity: 0.72;
-}
-[data-theme="light"] #bg-video { opacity: 0.5; }
-
 :root {
-    /* mang mau mong hon nhieu so voi truoc (0.85 / 0.9) */
-    --bg-card:  rgba(12, 12, 12, 0.46);
-    --bg-hover: rgba(46, 46, 46, 0.55);
-    --bg-input: rgba(8, 8, 8, 0.55);
-    --border:   rgba(255, 255, 255, 0.22);
+    --bg-card:  rgba(20, 20, 20, 0.88);
+    --bg-hover: rgba(38, 38, 38, 0.92);
+    --bg-input: rgba(10, 10, 10, 0.9);
+    --border:   rgba(255, 255, 255, 0.16);
 }
 [data-theme="light"] {
-    --bg-card:  rgba(255, 255, 255, 0.55);
-    --bg-hover: rgba(232, 232, 232, 0.6);
-    --bg-input: rgba(255, 255, 255, 0.65);
-    --border:   rgba(0, 0, 0, 0.2);
+    --bg-card:  rgba(255, 255, 255, 0.92);
+    --bg-hover: rgba(236, 236, 236, 0.95);
+    --bg-input: rgba(255, 255, 255, 0.96);
+    --border:   rgba(0, 0, 0, 0.14);
 }
 
-/*  Lam mo phan video nam ngay sau moi mang, de chu doc duoc ma van thay
-    duoc chuyen dong phia sau.                                           */
-.hdr, .nav, .card, .ctrl-row, .ic-card, .verdict, .term, .toast, .led-cell {
-    backdrop-filter: blur(9px) saturate(1.15);
-    -webkit-backdrop-filter: blur(9px) saturate(1.15);
+html { background: var(--bg-main); }
+body { background: var(--bg-main); text-shadow: none; }
+
+/*  Logo mo giua trang. Co gan theo be ngang man hinh nhung co tran
+    tren va tran duoi, de khong qua be tren man nho va khong ap dao
+    tren man rong.                                                  */
+#bg-logo {
+    position: fixed; inset: 0; z-index: -100;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; overflow: hidden;
+}
+#bg-logo img {
+    width: clamp(260px, 34vw, 520px);
+    height: auto;
+    opacity: 0.06;
+    filter: grayscale(1);
+}
+[data-theme="light"] #bg-logo img { opacity: 0.05; }
+
+/*  Cac mang giao dien gio gan nhu dac, chi giu mot chut lam mo hau
+    canh cho lop noi tren nhu menu va hop thoai.                    */
+.hdr, .nav {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.card, .ctrl-row, .ic-card, .verdict, .term, .toast, .led-cell {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
-/*  Chu tren nen dong phai co vien toi rat nhe moi khong bi nhoe. */
-[data-theme="dark"] body, :root:not([data-theme="light"]) body {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-}
-[data-theme="light"] body { text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7); }
-
-/*  Thanh dieu huong mo hon nua: no la phan it thong tin nhat, nhuong
-    cho nen. Tab dang chon van dac de nhin ra ngay.                     */
-.nav { background: rgba(0, 0, 0, 0.28); }
-[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.35); }
-.nav-tab { opacity: 0.72; }
-.nav-tab:hover, .nav-tab.active { opacity: 1; }
+.nav { background: var(--bg-card); }
+.nav-tab { opacity: 1; }
 .nav-tab.active { background: var(--accent-dim); color: var(--text-main); }
 
 /* ============================================================

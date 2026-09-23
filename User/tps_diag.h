@@ -53,12 +53,26 @@
                                        report[1] = IC (0..5),
                                        report[2..3] = WIDTH 0..1023 (LE)   */
 
+/*  So hieu phien ban firmware, in ra ngay dong dau ban bao cao.
+ *  May tinh doc con so nay de biet chip dang chay ban nao, nho vay bao
+ *  duoc "firmware cu, hay nap lai" thay vi im lang hien gach ngang khi
+ *  mot tinh nang moi chua co trong chip.
+ *
+ *  Tang len moi khi dinh dang ban bao cao thay doi:
+ *      1 - ban dau
+ *      2 - them muc NHIET DO: NTC R306 qua ADC1, DIETEMP, bit qua nhiet
+ */
+#define DIAG_FW_VERSION     2u
+
 #define DIAG_REPORT_SIZE    64u
 #define DIAG_CHUNK_HDR      4u
 #define DIAG_CHUNK_TEXT     (DIAG_REPORT_SIZE - DIAG_CHUNK_HDR)   /* = 60 */
 
 /* Suc chua toi da cua mot ban bao cao, tinh bang ky tu */
-#define DIAG_TEXT_MAX       3000u
+/*  Do dai toi da cua ban bao cao.
+ *  Da tung de 3000 va ban bao cao cham tran dung con so do - phan cuoi bi
+ *  cat sach ma khong bao gi. Noi len 4600, RAM con rat du (dung ~35%).   */
+#define DIAG_TEXT_MAX       4600u
 
 /* Khoi tao bo dem bao cao. Goi mot lan luc khoi dong. */
 void Diag_Init(void);

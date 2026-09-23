@@ -102,6 +102,10 @@ void Diag_Init(void)
 /* ------------------------------------------------------------------------- */
 /*  Ghi vao bo dem                                                           */
 /* ------------------------------------------------------------------------- */
+/*  Bang 1 khi bo dem da day va co ky tu bi bo di. Diag_RunFullReport doc
+ *  co nay o cuoi de noi ro cho nguoi dung biet ban bao cao bi cat.       */
+static uint8_t s_truncated;
+
 static void DiagPutc(char c)
 {
     if (s_len < DIAG_TEXT_MAX)
@@ -109,6 +113,10 @@ static void DiagPutc(char c)
         s_text[s_len] = c;
         s_len++;
         s_text[s_len] = '\0';
+    }
+    else
+    {
+        s_truncated = 1u;
     }
 }
 
@@ -667,12 +675,15 @@ void Diag_RunFullReport(void)
     const uint8_t testVal = 0x55;       /* gia tri thu, ghi vao WIDTH01H */
 
     /* Bat dau ban bao cao moi */
-    s_len     = 0;
-    s_text[0] = '\0';
+    s_len       = 0;
+    s_text[0]   = '\0';
+    s_truncated = 0u;
 
     Diag_Puts("=========================================================");
     Diag_Nl();
     Diag_Puts(" BAO CAO CHAN DOAN CHUOI TPS9266x");
+    Diag_Nl();
+    Diag_Puts(" FW v"); Diag_Dec((uint32_t)DIAG_FW_VERSION);
     Diag_Nl();
     Diag_Puts(" Tach bach duong GHI va duong DOC cua tung IC");
     Diag_Nl();
@@ -685,6 +696,129 @@ void Diag_RunFullReport(void)
     Diag_Puts(" Mat na IC ghi WIDTH that bai: 0x");
     Diag_Hex8(TPS_FlushFailMask);
     Diag_Nl();
+
+    Diag_Puts("---------------------------------------------------------");
+    Diag_Nl();
+    Diag_Puts(" NHIET DO");
+    Diag_Nl();
+
+    /*  Theo schematic SSL_96pixel_ADB MD_07012026_R00:
+     *
+     *      VDK1 --[R303]--+--[R306 = NTC]-- GND      -> IC301 chan 9  (ADC1)
+     *                     |
+     *                  [C400 loc]                       diem do: TP376
+     *
+     *      VDK1 --[R313]--+--[R314]-------- GND      -> IC301        (ADC2)
+     *                     |
+     *                  [C314 loc]
+     *
+     *  R306 la NTC va duoc dat ngay canh chuoi LED, nen day moi la nhiet do
+     *  dang quan tam - nhiet vung den, khong phai nhiet trong long IC.
+     *
+     *  Hai chan ADC chi lay mau khi bit LEDADCEN trong SYSCFG duoc bat. Ham
+     *  khoi tao binh thuong khong bat no vi viec dieu khien den khong can,
+     *  nen o day bat tam roi tra lai nguyen trang, khong de lai anh huong
+     *  gi len cau hinh dang chay.
+     *
+     *  Chi TPS92664 (IC301) co ADC. Cac con TPS92667 khong co.             */
+    {
+        uint8_t raw, sysOld = 0, sysSaved = 0;
+
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, &sysOld) == TPS_OK)
+        {
+            sysSaved = 1;
+            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG,
+                          (uint8_t)(sysOld | TPS_SYSCFG_LEDADCEN));
+            TPS_DelayMs(5);          /* cho bo ADC lay xong mot vong mau */
+        }
+        else
+        {
+            Diag_Puts("  Khong doc duoc SYSCFG, ADC co the chua duoc bat.");
+            Diag_Nl();
+        }
+
+        /*  Doc ca hai chan ADC roi quy doi. Phai doc ca hai vi phep tinh
+         *  dua tren TY SO giua chung.                                      */
+        {
+            uint8_t a1 = 0, a2 = 0, ok1, ok2;
+
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            ok1 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC1, &a1) == TPS_OK);
+
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            ok2 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC2, &a2) == TPS_OK);
+
+            Diag_Puts("  NTC R306 (canh chuoi LED): ");
+            if (ok1 && ok2)
+            {
+                int16_t deci = NtcTempDeci(a1, a2);
+                if (deci != NTC_TEMP_INVALID)
+                {
+                    float denom = 2.0f * (float)a2 - (float)a1;
+                    uint32_t rNtc = (uint32_t)(NTC_R_TOP * (float)a1 / denom);
+                    DiagDeci(deci); Diag_Puts(" do C   (R_ntc = ");
+                    Diag_Dec(rNtc); Diag_Puts(" Ohm)");
+                }
+                else { Diag_Puts("so doc khong hop le - kiem tra NTC va cau phan ap"); }
+            }
+            else { Diag_Puts("khong doc duoc ADC"); }
+            Diag_Nl();
+
+            Diag_Puts("    ADC1=0x"); Diag_Hex8(a1);
+            Diag_Puts("  ADC2=0x");   Diag_Hex8(a2);
+            Diag_Puts("  (ADC2 la moc VDK1/2, dung de khu VDK1 khoi phep tinh)");
+            Diag_Nl();
+        }
+
+        if (sysSaved)
+        {
+            TPS_CommsReset();
+            TPS_DelayMs(2);
+            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, sysOld);
+        }
+
+        /*  Nhiet do trong long IC301. Khac han NTC: day la nhiet cua ban
+         *  than con chip, dung de biet chip co qua nong khong.             */
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        Diag_Puts("  IC301 nhiet do trong IC (DIETEMP): ");
+        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_DIETEMP, &raw) == TPS_OK)
+        {
+            /*  T[degC] = 0.9098 * raw - 50  (SLUSE18 bang 7-54) */
+            int32_t tC = ((int32_t)raw * 9098) / 10000 - 50;
+            Diag_Puts("raw=0x"); Diag_Hex8(raw); Diag_Puts("  = ");
+            if (tC < 0) { Diag_Puts("-"); tC = -tC; }
+            Diag_Dec((uint32_t)tC); Diag_Puts(" do C");
+        }
+        else { Diag_Puts("khong doc duoc"); }
+        Diag_Nl();
+    }
+
+    /*  Bit canh bao qua nhiet co tren ca 6 con, la canh bao nhiet duy nhat
+     *  ma cac con slave TPS92667 cung cap.                                  */
+    Diag_Puts("  Bit canh bao qua nhiet (STATUS bit 2) tung con:");
+    Diag_Nl();
+    for (d = 0; d < TPS_DEV_COUNT; d++)
+    {
+        uint8_t stT;
+        TPS_CommsReset();
+        TPS_DelayMs(2);
+        if (TPS_ReadReg8(d, TPS_REG_STATUS, &stT) != TPS_OK)
+        {
+            Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
+            Diag_Puts(" khong tra loi");
+            Diag_Nl();
+            continue;
+        }
+        Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
+        Diag_Puts((stT & 0x04) ? " QUA NHIET" : " binh thuong");
+        Diag_Nl();
+    }
+
 
     Diag_Puts(" So lan tran bo dem nhan (ORE): "); Diag_Dec(TPS_OverrunCount);
     Diag_Nl();
@@ -909,133 +1043,16 @@ void Diag_RunFullReport(void)
         Diag_Nl();
     }
 
-    Diag_Puts("---------------------------------------------------------");
-    Diag_Nl();
-    Diag_Puts(" NHIET DO");
-    Diag_Nl();
-
-    /*  Theo schematic SSL_96pixel_ADB MD_07012026_R00:
-     *
-     *      VDK1 --[R303]--+--[R306 = NTC]-- GND      -> IC301 chan 9  (ADC1)
-     *                     |
-     *                  [C400 loc]                       diem do: TP376
-     *
-     *      VDK1 --[R313]--+--[R314]-------- GND      -> IC301        (ADC2)
-     *                     |
-     *                  [C314 loc]
-     *
-     *  R306 la NTC va duoc dat ngay canh chuoi LED, nen day moi la nhiet do
-     *  dang quan tam - nhiet vung den, khong phai nhiet trong long IC.
-     *
-     *  Hai chan ADC chi lay mau khi bit LEDADCEN trong SYSCFG duoc bat. Ham
-     *  khoi tao binh thuong khong bat no vi viec dieu khien den khong can,
-     *  nen o day bat tam roi tra lai nguyen trang, khong de lai anh huong
-     *  gi len cau hinh dang chay.
-     *
-     *  Chi TPS92664 (IC301) co ADC. Cac con TPS92667 khong co.             */
-    {
-        uint8_t raw, sysOld = 0, sysSaved = 0;
-
-        TPS_CommsReset();
-        TPS_DelayMs(2);
-        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, &sysOld) == TPS_OK)
-        {
-            sysSaved = 1;
-            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG,
-                          (uint8_t)(sysOld | TPS_SYSCFG_LEDADCEN));
-            TPS_DelayMs(5);          /* cho bo ADC lay xong mot vong mau */
-        }
-        else
-        {
-            Diag_Puts("  Khong doc duoc SYSCFG, ADC co the chua duoc bat.");
-            Diag_Nl();
-        }
-
-        /*  Doc ca hai chan ADC roi quy doi. Phai doc ca hai vi phep tinh
-         *  dua tren TY SO giua chung.                                      */
-        {
-            uint8_t a1 = 0, a2 = 0, ok1, ok2;
-
-            TPS_CommsReset();
-            TPS_DelayMs(2);
-            ok1 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC1, &a1) == TPS_OK);
-
-            TPS_CommsReset();
-            TPS_DelayMs(2);
-            ok2 = (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_ADC2, &a2) == TPS_OK);
-
-            Diag_Puts("  NTC R306 (canh chuoi LED): ");
-            if (ok1 && ok2)
-            {
-                int16_t deci = NtcTempDeci(a1, a2);
-                if (deci != NTC_TEMP_INVALID)
-                {
-                    float denom = 2.0f * (float)a2 - (float)a1;
-                    uint32_t rNtc = (uint32_t)(NTC_R_TOP * (float)a1 / denom);
-                    DiagDeci(deci); Diag_Puts(" do C   (R_ntc = ");
-                    Diag_Dec(rNtc); Diag_Puts(" Ohm)");
-                }
-                else { Diag_Puts("so doc khong hop le - kiem tra NTC va cau phan ap"); }
-            }
-            else { Diag_Puts("khong doc duoc ADC"); }
-            Diag_Nl();
-
-            Diag_Puts("    ADC1=0x"); Diag_Hex8(a1);
-            Diag_Puts("  ADC2=0x");   Diag_Hex8(a2);
-            Diag_Puts("  (ADC2 la moc VDK1/2, dung de khu VDK1 khoi phep tinh)");
-            Diag_Nl();
-        }
-
-        if (sysSaved)
-        {
-            TPS_CommsReset();
-            TPS_DelayMs(2);
-            TPS_WriteReg8(TPS_ADDR_IC301, TPS_REG_SYSCFG, sysOld);
-        }
-
-        /*  Nhiet do trong long IC301. Khac han NTC: day la nhiet cua ban
-         *  than con chip, dung de biet chip co qua nong khong.             */
-        TPS_CommsReset();
-        TPS_DelayMs(2);
-        Diag_Puts("  IC301 nhiet do trong IC (DIETEMP): ");
-        if (TPS_ReadReg8(TPS_ADDR_IC301, TPS_REG_DIETEMP, &raw) == TPS_OK)
-        {
-            /*  T[degC] = 0.9098 * raw - 50  (SLUSE18 bang 7-54) */
-            int32_t tC = ((int32_t)raw * 9098) / 10000 - 50;
-            Diag_Puts("raw=0x"); Diag_Hex8(raw); Diag_Puts("  = ");
-            if (tC < 0) { Diag_Puts("-"); tC = -tC; }
-            Diag_Dec((uint32_t)tC); Diag_Puts(" do C");
-        }
-        else { Diag_Puts("khong doc duoc"); }
-        Diag_Nl();
-    }
-
-    /*  Bit canh bao qua nhiet co tren ca 6 con, la canh bao nhiet duy nhat
-     *  ma cac con slave TPS92667 cung cap.                                  */
-    Diag_Puts("  Bit canh bao qua nhiet (STATUS bit 2) tung con:");
-    Diag_Nl();
-    for (d = 0; d < TPS_DEV_COUNT; d++)
-    {
-        uint8_t stT;
-        TPS_CommsReset();
-        TPS_DelayMs(2);
-        if (TPS_ReadReg8(d, TPS_REG_STATUS, &stT) != TPS_OK)
-        {
-            Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
-            Diag_Puts(" khong tra loi");
-            Diag_Nl();
-            continue;
-        }
-        Diag_Puts("    IC30"); Diag_Dec((uint32_t)(d + 1));
-        Diag_Puts((stT & 0x04) ? " QUA NHIET" : " binh thuong");
-        Diag_Nl();
-    }
-
     TPS_MaxTries = 3;          /* bat lai che do thu lai cho van hanh binh thuong */
 
     /* --- Ket luan ------------------------------------------------------- */
     Diag_Puts("=========================================================");
     Diag_Nl();
+    if (s_truncated)
+    {
+        Diag_Puts(" (ban bao cao da cham gioi han bo dem, phan cuoi bi cat)");
+        Diag_Nl();
+    }
     Diag_Puts(" TONG KET: doc "); Diag_Dec(okRead);
     Diag_Puts("/6   ghi ");       Diag_Dec(okWrite);
     Diag_Puts("/6   doc lai khop "); Diag_Dec(okBack);

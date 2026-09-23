@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>ADB Controller</title>
+    <style>
+        /*  Cua so gioi thieu. Khong co khung, chi co doan video va mot dong
+            trang thai nho. No tu dong bien mat khi trang chinh tai xong -
+            do dai vi vay phu thuoc vao thoi gian tai, khong phai mot con so
+            dat cung.                                                        */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            user-select: none; cursor: default;
+            -webkit-app-region: drag;      /* keo duoc cua so khong khung */
+        }
+
+        #vid {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        /*  Lop phu toi dan o hai dau de chu doc duoc tren moi khung hinh. */
+        .veil {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom,
+                        rgba(0,0,0,0.45) 0%, rgba(0,0,0,0) 35%,
+                        rgba(0,0,0,0) 55%, rgba(0,0,0,0.75) 100%);
+        }
+
+        .top {
+            position: absolute; top: 22px; left: 26px; right: 26px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .top img { height: 26px; object-fit: contain; }
+        .top h1 {
+            font-size: 1.05rem; font-weight: 700; color: #fff;
+            letter-spacing: 0.02em;
+        }
+        .top h1 span { color: #e50000; }
+
+        .bottom {
+            position: absolute; left: 26px; right: 26px; bottom: 22px;
+        }
+        .status {
+            font-size: 0.78rem; color: rgba(255,255,255,0.75);
+            margin-bottom: 8px; min-height: 1.1em;
+        }
+
+        /*  Thanh tien trinh khong xac dinh: khong gia vo biet con bao lau,
+            chi cho thay ung dung dang lam viec.                            */
+        .bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,0.18); overflow: hidden; }
+        .bar i {
+            display: block; height: 100%; width: 35%; border-radius: 2px;
+            background: linear-gradient(90deg, transparent, #e50000, transparent);
+            animation: slide 1.4s ease-in-out infinite;
+        }
+        @keyframes slide {
+            0%   { transform: translateX(-100%); }
+            100% { transform: translateX(340%); }
+        }
+
+        body.leaving { animation: fade 0.45s ease forwards; }
+        @keyframes fade { to { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <video id="vid" autoplay muted loop playsinline>
+        <source src="bg.mp4" type="video/mp4">
+    </video>
+    <div class="veil"></div>
+
+    <div class="top">
+        <img src="icon.png" alt="">
+        <h1><span>ADB</span> Controller</h1>
+    </div>
+
+    <div class="bottom">
+        <div class="status" id="status">Đang khởi động…</div>
+        <div class="bar"><i></i></div>
+    </div>
+
+    <script>
+        /*  Tien trinh chinh goi ham nay qua executeJavaScript. Khong dung IPC
+            de khoi phai them preload chi cho hai cau chu.                   */
+        window.setStatus = function (text) {
+            document.getElementById('status').textContent = text;
+        };
+        window.leave = function () {
+            document.body.classList.add('leaving');
+        };
+    </script>
+</body>
+</html>

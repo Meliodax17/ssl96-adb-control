@@ -29,3 +29,12 @@ Output/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Thu muc tam khi chan doan (co ca node_modules)
+tools/tmp/
+
+# Ban sao luu firmware truoc khi quay ve ban commit 18-09
+backup_22-09/
+
+# File video nguon o thu muc goc - ban dung trong app la app/public/bg.mp4
+/*.mp4

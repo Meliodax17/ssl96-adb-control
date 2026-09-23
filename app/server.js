@@ -281,9 +281,30 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'usb', connected: !!device, found: listHidDevices().length > 0, hid: !!HID }));
 });
 
+/*  Cong da bi chiem thi KHONG duoc de van de nay lam sap ung dung.
+ *
+ *  Truoc day loi EADDRINUSE thoat ra ngoai thanh ngoai le khong bat, va
+ *  Electron do thang no ra hop thoai "A JavaScript error occurred in the
+ *  main process" - nguoi dung khong hieu chuyen gi va khong mo duoc app.
+ *
+ *  Gan nhu luon la mot ban sao khac cua chinh ung dung nay dang chay. Khi
+ *  do cu de nguyen ban sao do phuc vu; cua so se tai giao dien tu no nhu
+ *  binh thuong.                                                            */
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`\n  [!] Cong ${PORT} dang duoc mot tien trinh khac su dung.`);
+        console.log('      Dung lai may chu cua tien trinh do, khong mo them.\n');
+        module.exports.portBusy = true;
+        return;
+    }
+    console.error('  [!] Loi may chu:', err.message);
+});
+
 server.listen(PORT, () => {
     console.log(`\n  SSL96 ADB Control  →  http://localhost:${PORT}\n`);
     if (!HID) { console.log('  [!] node-hid not loaded. Run: npm install node-hid\n'); return; }
     if (openDevice()) console.log('  [USB] Auto-connected to board\n');
     else              console.log('  [USB] Board not found — connect via UI\n');
 });
+
+module.exports.portBusy = false;
